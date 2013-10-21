@@ -46,7 +46,7 @@ function woocommerce_manifest_admin_menu() {
  function eshopbox_bluedart_page(){
                  global $wpdb;
       echo "<input type='button' name='batchno' value='Enter Batch number' id='batchno' />"; 
-     // echo "<input type='button' name='awbnum' value='Upload Files of AWB numbers' id='awbnum' />"; 
+      echo "<input type='button' name='awbnum' value='Upload Files of AWB numbers' id='awbnum' />"; 
       
       echo '<form name="batchform" id="batchform" method="post"><input type="text" name="batch" id="batch" />
             <input type="radio" name="rad" value="cod" /> COD
@@ -55,18 +55,64 @@ function woocommerce_manifest_admin_menu() {
             <input type="submit" name="subbatch" value="submit" />
             <input type="hidden" name="post1" value="post" />
         </form>';   
-      /*
-            echo '<form name="csvform" id="csvform" method="post" enctype="multipart/form-data"><input type="text" name="batch" id="batch" />
+      
+            echo '<form name="csvform" id="csvform" method="post" enctype="multipart/form-data">
                 <input type="file" name="csvtext" />
             <input type="submit" name="subbatch" value="submit" />
             <input type="hidden" name="postcsv" value="post" />
         </form>'; 
-*/
+
      if($_POST['postcsv']=='post'){
-       //  echo '<pre>';
-       //  print_r($_POST);
+        //i echo '<pre>';
+        // print_r($_POST);
+	// for text files
+	if($_FILES['csvtext']['type']=='text/plain'){ 
+		$myFile = $_FILES['csvtext']['tmp_name'];
+		$handle = @fopen($myFile, "r");
+if ($handle) {
+    while (($buffer = fgets($handle, 4096)) !== false) {
+    $buffer = trim($buffer);
+$querystr = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_tracking_number' and meta_value='$buffer'";
+$postid = $wpdb->get_var($querystr);
+
+    }
+}
+
+
+	} else { // for excel file
+	if($_FILES['csvtext']['type']=='application/vnd.ms-excel'){
+$myFile = $_FILES['csvtext']['name'];
+set_include_path(get_include_path() . PATH_SEPARATOR . 'class/');
+include 'PHPExcel/IOFactory.php';
+	try {
+	
+	$objPHPExcel = PHPExcel_IOFactory::load($myFile);
+
+} catch(Exception $e) {
+
+	die('Error loading file "'.pathinfo($myFile,PATHINFO_BASENAME).'": '.$e->getMessage());
+
+}
+
+$sheetData = $objPHPExcel->getActiveSheet()->toArray(null,true,true,true);
+
+
+
+foreach($sheetData as $sheetdata){
+
+	$xyz[] = $sheetdata['A'];
+
+print_r($sheetdata);
+
+}
+
+print_r($xyz);
+
+	}
+	//echo '<pre>';
+	//print_r($_FILES);
          
-     }
+     } }
      
       if($_POST['post1']=='post'){
         //  print_r($_POST);
