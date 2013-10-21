@@ -33,16 +33,185 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class WC_Bludart{
     public function __construct(){
-        add_action('admin_menu', array( &$this, 'woocommerce_manifest_admin_menu' )); 
+        add_action('admin_menu', array( &$this, 'woocommerce_bluedart_admin_menu' )); 
        
     }
                             
-function woocommerce_manifest_admin_menu() {
+function woocommerce_bluedart_admin_menu() {
     
-    add_menu_page(__('BlueDart','wc-checkout-cod-pincodes'), __('BlueDart','wc-checkout-cod-pincodes'), 'edit_posts', 'eshopbox-bluedart', array( &$this, 'eshopbox_bluedart_page' ) );
-     
+    add_menu_page(__('BlueDart','wc-bluedart'), __('BlueDart','wc-bluedart'), 'edit_posts', 'eshopbox-bluedart', array( &$this, 'eshopbox_bluedart_page' ) );
+    add_submenu_page( 'eshopbox-bluedart', 'Config', 'Config', 'edit_posts', 'bluedart_config', array( &$this, 'bluedart_config_page' ) );
 }
  
+// config page for the bluedart panel
+function bluedart_config_page(){
+  		if ( !current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( __( 'You do not have sufficient permissions to access this page.', 'wc-bluedart' ) );
+		}
+		// Load needed WP resources for media uploader
+		wp_enqueue_media();
+
+		// Save the field values
+		if ( isset( $_POST['bluedart_fields_submitted'] ) && $_POST['bluedart_fields_submitted'] == 'submitted' ) {
+			foreach ( $_POST as $key => $value ) {
+			
+				  if ( get_option( $key ) != $value ) {
+					  update_option( $key, $value );
+				  }
+				  else {
+					  add_option( $key, $value, '', 'no' );
+				  }
+				}
+			
+		}
+                ?>
+   <div class="wrap">
+			<div id="icon-options-general" class="icon32">
+				<br />
+			</div> 
+			<h2><?php _e( 'Eshopbox Bluedart panel', 'wc-bluedart' ); ?></h2>
+			<?php if ( isset( $_POST['pip_fields_submitted'] ) && $_POST['pip_fields_submitted'] == 'submitted' ) { ?>
+			<div id="message" class="updated fade"><p><strong><?php _e( 'Your settings have been saved.', 'wc-bluedart' ); ?></strong></p></div>
+			<?php } ?>
+			<p><?php _e( 'Change settings for bluedart panel.', 'wc-bluedart' ); ?></p>
+			<div id="content">
+			  <form method="post" action="" id="pip_settings">
+				  <input type="hidden" name="bluedart_fields_submitted" value="submitted">
+				  <div id="poststuff">
+						<div class="postbox">
+							<h3 class="hndle"><?php _e( 'Configuration', 'wc-bluedart' ); ?></h3>
+							<div class="inside pip-preview">
+							  <table class="form-table">
+							    <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_store_name"><b><?php _e( 'Store name:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="store_name" class="regular-text" value="<?php echo stripslashes(get_option( 'store_name' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Your store name.', 'wc-bluedart' );
+    					
+    									?></span>
+    								</td>
+    							</tr>
+    							
+    							<tr>
+    								<th>
+    									<label for="eshopbox_bluedart_vendorcode"><b><?php _e( 'Vendor code:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="vendor_code" class="regular-text" value="<?php echo stripslashes(get_option( 'vendor_code' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Bluedart vendor code.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                       	<tr>
+    								<th>
+    									<label for="eshopbox_bluedart_shippername"><b><?php _e( 'Shipper Name:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="shipper_name" class="regular-text" value="<?php echo stripslashes(get_option( 'shipper_name' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Bluedart Shipper Name.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                        
+                                                        <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_returnaddress1"><b><?php _e( 'Return Address1:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="return_address1" class="regular-text" value="<?php echo stripslashes(get_option( 'return_address1' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Shipper Return Address 1.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                        
+                                                                  <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_returnaddress2"><b><?php _e( 'Return Address 2:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="return_address2" class="regular-text" value="<?php echo stripslashes(get_option( 'return_address2' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Shipper Return Address 2.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                        
+                                                                   <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_returnaddress3"><b><?php _e( 'Return Address 3:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="return_address3" class="regular-text" value="<?php echo stripslashes(get_option( 'return_address3' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Shipper Return Address 3.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                        
+                                                                  <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_pin"><b><?php _e( 'Return Pincode:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="return_pincode" class="regular-text" value="<?php echo stripslashes(get_option( 'return_pincode' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Shipper pincode.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                        
+                                                                                 <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_codareacustomercode"><b><?php _e( 'COD area customer code:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="cod_areacustomer" class="regular-text" value="<?php echo stripslashes(get_option( 'cod_areacustomer' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'COD area customer code.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                                                        
+                                                         <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_prepaidareacustomercode"><b><?php _e( 'PREPAID area customer code:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									<input type="text" name="prepaid_areacustomer" class="regular-text" value="<?php echo stripslashes(get_option( 'prepaid_areacustomer' )); ?>" /><br />
+    									<span class="description"><?php
+    										echo __( 'Prepaid area customer code.', 'wc-bluedart' );
+    										
+    									?></span>
+    								</td>
+    							</tr>
+                        
+								</table>
+							</div>
+						</div>
+					</div>
+			  <p class="submit">
+				<input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e( 'Save Changes', 'wc-bluedart' ); ?>" />
+			  </p>
+		    </form>
+		  </div>
+		</div> 
+    
+    <?php
+}
+
  function eshopbox_bluedart_page(){
                  global $wpdb;
       echo "<input type='button' name='batchno' value='Enter Batch number' id='batchno' />"; 
