@@ -81,18 +81,25 @@ $postid = $wpdb->get_var($querystr);
 
 	} else { // for excel file
 	if($_FILES['csvtext']['type']=='application/vnd.ms-excel'){
-$myFile = $_FILES['csvtext']['name'];
-set_include_path(get_include_path() . PATH_SEPARATOR . 'class/');
-include 'PHPExcel/IOFactory.php';
-	try {
-	
-	$objPHPExcel = PHPExcel_IOFactory::load($myFile);
+$myFile = $_FILES['csvtext']['tmp_name'];
+//set_include_path(get_include_path() . PATH_SEPARATOR . 'class/');
+include 'class/PHPExcel/IOFactory.php';
 
+//$myFile = $myFile;
+//echo get_include_path() . PATH_SEPARATOR . 'class/';
+	try {
+
+	$objPHPExcel = PHPExcel_IOFactory::load($myFile);
+//echo 'test123';
 } catch(Exception $e) {
 
 	die('Error loading file "'.pathinfo($myFile,PATHINFO_BASENAME).'": '.$e->getMessage());
 
 }
+//echo 'test99';
+//echo '<pre>';
+//print_r($objPHPExcel);
+
 
 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null,true,true,true);
 
@@ -100,13 +107,15 @@ $sheetData = $objPHPExcel->getActiveSheet()->toArray(null,true,true,true);
 
 foreach($sheetData as $sheetdata){
 
-	$xyz[] = $sheetdata['A'];
-
-print_r($sheetdata);
+	$awbnumber = trim($sheetdata['A']);
+$querystr = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_tracking_number' and meta_value='$awbnumber'";
+$postid = $wpdb->get_var($querystr);
+$orderIds[] = $postid;
+//print_r($sheetdata);
 
 }
-
-print_r($xyz);
+$this->readArrayExportxls($orderIds);
+//print_r($xyz);
 
 	}
 	//echo '<pre>';
@@ -198,6 +207,87 @@ header("Expires: 0");
      
  }
  
+ 
+ function readArrayExportxls($orderIds){
+      global $wpdb,$woocommerce;
+                $finalarray[]=array("Airwaybill","Type","Reference Number","Sender / Store name","attention","address1","address2","address3","pincode","tel number","mobile number","Prod/SKU code","contents"
+                ,"weight","Declared Value","Collectable Value","Vendor Code","Shipper Name","Return Address1","Return Address2","Return Address3","Return Pin","Length ( Cms )","Bredth ( Cms )","Height ( Cms )","Pieces","Area_customer_code","Handover Date","Handover Time"
+                );
+
+                
+            foreach($orderIds as $key=>$val){
+                 $theorder = new WC_Order($val);
+              //   echo '<pre>';
+              //   print_r($theorder);
+                 $items = $theorder->get_items();
+                 $product_id="";
+                 $product_name="";
+                 $productWeight="";
+                 $quant = "";
+                  foreach ( $items as $item ) {
+                     // echo '<pre>';
+                     // print_r($item);
+                                           $p =  get_post_meta($item['product_id']);
+                     
+
+                     
+                  $product_id .= $p['_sku'][0].',';
+    $_product = $theorder->get_product_from_item( $item );
+    $product_name .= $item['name'].',';
+   // $product_id .= $item['product_id'].',';
+    $product_variation_id = $item['variation_id'];
+  //  $productWeight += $_product->get_weight()/1000;
+     $productWeight += 0.4;
+    $quant +=$item['qty'];
+}
+               //  echo '<pre>';
+              //   print_r($theorder);
+                 $vendorCode = "ggl001";
+                 if($theorder->payment_method=='cod'){
+                     $totalCollectible = $theorder->order_total;
+                     $custCode = "DEL247295";
+                     $payType = "COD";
+                 } else {
+                     $totalCollectible = 0;
+                     $custCode = "DEL247284";
+                     $payType = "NONCOD";
+                 }
+                 
+                 if($theorder->shipping_address_2==''){
+                     $shipAddress2 = '-';
+                 } else {
+                     $shipAddress2 = $theorder->shipping_address_2;
+                 }
+     $dateTime = explode(' ',date('d-m-Y h:m:s',$manifestDetails[0]->dates));
+                if($_POST['rad']=='' || $_POST['rad']=='both'){
+                 $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,'Getglamr',$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
+  $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,"Getglamr","Room no-103, B-9, First Floor, Housing Society, South Extension Part-I New Delhi","-","-","110049",
+                     "20","20","20",$quant,$custCode,$dateTime[0],$dateTime[1]);
+                } else if($theorder->payment_method==$_POST['rad']){
+                          $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,'Getglamr',$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
+  $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,"Getglamr","Room no-103, B-9, First Floor, Housing Society, South Extension Part-I New Delhi","-","-","110049",
+                     "20","20","20",$quant,$custCode,$dateTime[0],$dateTime[1]); 
+                }
+                
+                
+                
+                
+                     
+            }
+   ob_clean();     
+header('Content-Type: application/vnd.ms-excel;');                 // This should work for IE & Opera
+header("Content-type: application/x-msexcel");     
+header("Content-Disposition: attachment; filename=shipment.xls");
+header("Pragma: no-cache");
+header("Expires: 0");
+            
+    $outputBuffer = fopen("php://output", 'w');
+	foreach($finalarray as $val) {
+	    fputcsv($outputBuffer, $val);
+	}
+	fclose($outputBuffer);        
+      exit;  
+ }
  
         
         /**
