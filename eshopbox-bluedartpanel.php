@@ -214,10 +214,107 @@ function bluedart_config_page(){
 
  function eshopbox_bluedart_page(){
                  global $wpdb;
-      echo "<input type='button' name='batchno' value='Enter Batch number' id='batchno' />"; 
-      echo "<input type='button' name='awbnum' value='Upload Files of AWB numbers' id='awbnum' />"; 
-      
-      echo '<form name="batchform" id="batchform" method="post"><input type="text" name="batch" id="batch" />
+    //  echo "<input type='button' name='batchno' value='Enter Batch number' id='batchno' />"; 
+    //  echo "<input type='button' name='awbnum' value='Upload Files of AWB numbers' id='awbnum' />"; 
+      ?>
+                 
+             <div class="wrap">
+			<div id="icon-options-general" class="icon32">
+				<br />
+			</div> 
+			<h2><?php _e( 'Eshopbox Bluedart panel', 'wc-bluedart' ); ?></h2>
+			<?php if ( isset( $_POST['pip_fields_submitted'] ) && $_POST['pip_fields_submitted'] == 'submitted' ) { ?>
+			<div id="message" class="updated fade"><p><strong><?php _e( 'Your settings have been saved.', 'wc-bluedart' ); ?></strong></p></div>
+			<?php } ?>
+			<p><?php _e( 'Change settings for bluedart panel.', 'wc-bluedart' ); ?></p>
+			<div id="content">
+			  <form method="post" name="batchform" id="batchform" action="" >
+				  <input type="hidden" name="bluedart_fields_submitted" value="submitted">
+				  <div id="poststuff">
+						<div class="postbox">
+							<h3 class="hndle"><?php _e( 'Download softdata with manifest id', 'wc-bluedart' ); ?></h3>
+							<div class="inside pip-preview">
+							  <table class="form-table">
+							    <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_store_name"><b><?php _e( 'Manifest id:', 'wc-bluedart' ); ?></b></label>
+    								</th>
+    								<td>
+    									
+    									          <input type="text" name="batch" id="batch" />
+            <input type="radio" name="rad" value="cod" /> COD
+            <input type="radio" name="rad" value="payu_in" /> Prepaid
+            <input type="radio" name="rad" value="both" /> both
+    								</td>
+    							</tr>
+    							
+    				<tr>
+    								
+    								<td>
+    						 <p class="submit">
+				 <input type="submit" name="subbatch" value="submit" />
+                                  <input type="hidden" name="post1" value="post" />
+			  </p>			
+    									         
+    								</td>
+    							</tr>		
+                                                                                 
+                        
+								</table>
+							</div>
+						</div>
+					</div>
+			 
+		    </form>
+		  </div>
+		</div> 
+        
+               <div class="wrap">
+
+		
+			<div id="content">
+			  <form method="post" name="csvform" id="csvform" action="" enctype="multipart/form-data" >
+				  <input type="hidden" name="bluedart_fields_submitted" value="submitted">
+				  <div id="poststuff">
+						<div class="postbox">
+							<h3 class="hndle"><?php _e( 'Upload AWB number .xls/.txt file', 'wc-bluedart' ); ?></h3>
+							<div class="inside pip-preview">
+							  <table class="form-table">
+							    <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_store_name"><b><?php _e( 'Upload file:', 'wc-bluedart' ); ?></b></label> 
+    								</th>
+    								<td>
+    									
+    									          <input type="file" name="csvtext" />
+    								</td>
+    							</tr>
+    							
+    				<tr>
+    								
+    								<td>
+    						 <p class="submit">
+		        <input type="submit" name="subbatch" value="submit" />
+            <input type="hidden" name="postcsv" value="post" />
+			  </p>			
+    									         
+    								</td>
+    							</tr>		
+                                                                                 
+                        
+								</table>
+							</div>
+						</div>
+					</div>
+			 
+		    </form>
+		  </div>
+		</div>      
+                 
+        <?php         
+     /*
+        echo '<form name="batchform" id="batchform" method="post">
+          <input type="text" name="batch" id="batch" />
             <input type="radio" name="rad" value="cod" /> COD
             <input type="radio" name="rad" value="payu_in" /> Prepaid
             <input type="radio" name="rad" value="both" /> both
@@ -230,6 +327,8 @@ function bluedart_config_page(){
             <input type="submit" name="subbatch" value="submit" />
             <input type="hidden" name="postcsv" value="post" />
         </form>'; 
+      * */
+     
 
      if($_POST['postcsv']=='post'){
         // echo '<pre>'; print_r($_FILES);
@@ -243,8 +342,9 @@ if ($handle) {
     $buffer = trim($buffer);
 $querystr = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_tracking_number' and meta_value='$buffer'";
 $postid = $wpdb->get_var($querystr);
-
+$orderIds[] = $postid;
     }
+    $this->readArrayExportxls($orderIds);
 }
 
 
@@ -301,6 +401,13 @@ $this->readArrayExportxls($orderIds);
             $finalarray[]=array("Airwaybill","Type","Reference Number","Sender / Store name","attention","address1","address2","address3","pincode","tel number","mobile number","Prod/SKU code","contents"
                 ,"weight","Declared Value","Collectable Value","Vendor Code","Shipper Name","Return Address1","Return Address2","Return Address3","Return Pin","Length ( Cms )","Bredth ( Cms )","Height ( Cms )","Pieces","Area_customer_code","Handover Date","Handover Time"
                 );
+            foreach($individualOrder as $key=>$val){
+                $orderIds[] = $val;
+                
+            }
+            $this->readArrayExportxls($orderIds);
+            exit;
+            
             foreach($individualOrder as $key=>$val){
                  $theorder = new WC_Order($val);
                  $items = $theorder->get_items();
@@ -483,7 +590,7 @@ header("Expires: 0");
             
     $outputBuffer = fopen("php://output", 'w');
 	foreach($finalarray as $val) {
-	    fputcsv($outputBuffer, $val,"\t");
+	    fputcsv($outputBuffer, $val);
 	}
 	fclose($outputBuffer);        
       exit;  
