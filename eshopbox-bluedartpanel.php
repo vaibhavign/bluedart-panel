@@ -232,7 +232,7 @@ function bluedart_config_page(){
         </form>'; 
 
      if($_POST['postcsv']=='post'){
-        //i echo '<pre>';
+        // echo '<pre>'; print_r($_FILES);
         // print_r($_POST);
 	// for text files
 	if($_FILES['csvtext']['type']=='text/plain'){ 
@@ -249,7 +249,7 @@ $postid = $wpdb->get_var($querystr);
 
 
 	} else { // for excel file
-	if($_FILES['csvtext']['type']=='application/vnd.ms-excel'){
+//	if($_FILES['csvtext']['type']=='application/vnd.ms-excel'){
 $myFile = $_FILES['csvtext']['tmp_name'];
 //set_include_path(get_include_path() . PATH_SEPARATOR . 'class/');
 include 'class/PHPExcel/IOFactory.php';
@@ -286,7 +286,7 @@ $orderIds[] = $postid;
 $this->readArrayExportxls($orderIds);
 //print_r($xyz);
 
-	}
+//	}
 	//echo '<pre>';
 	//print_r($_FILES);
          
@@ -407,18 +407,22 @@ header("Expires: 0");
     $product_variation_id = $item['variation_id'];
   //  $productWeight += $_product->get_weight()/1000;
      $productWeight += 0.4;
-    $quant +=$item['qty'];
+   // $quant +=$item['qty'];
+         $quant =1;
+
 }
                //  echo '<pre>';
               //   print_r($theorder);
-                 $vendorCode = "ggl001";
+$shipperName= get_option('shipper_name');
+$shipperPin = get_option('return_pincode');
+                 $vendorCode = get_option('vendor_code');
                  if($theorder->payment_method=='cod'){
                      $totalCollectible = $theorder->order_total;
-                     $custCode = "DEL247295";
+                     $custCode = get_option('cod_areacustomer');
                      $payType = "COD";
                  } else {
                      $totalCollectible = 0;
-                     $custCode = "DEL247284";
+                     $custCode = get_option('prepaid_areacustomer');
                      $payType = "NONCOD";
                  }
                  
@@ -427,14 +431,33 @@ header("Expires: 0");
                  } else {
                      $shipAddress2 = $theorder->shipping_address_2;
                  }
+                 
+                 if(get_option('return_address1')==''){
+                     $shipperAddress1 = "-";
+                 } else {
+                     $shipperAddress1 = get_option('return_address1');
+                 }
+                 
+                 if(get_option('return_address2')==''){
+                     $shipperAddress2 = "-";
+                 } else {
+                     $shipperAddress2 = get_option('return_address2');
+                 }
+                 
+                  if(get_option('return_address3')==''){
+                     $shipperAddress3 = "-";
+                 } else {
+                     $shipperAddress3 = get_option('return_address3');
+                 }
+                 
      $dateTime = explode(' ',date('d-m-Y h:m:s',$manifestDetails[0]->dates));
                 if($_POST['rad']=='' || $_POST['rad']=='both'){
-                 $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,'Getglamr',$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
-  $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,"Getglamr","Room no-103, B-9, First Floor, Housing Society, South Extension Part-I New Delhi","-","-","110049",
+                 $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,$shipperName,$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
+  $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,$shipperName,$shipperAddress1,$shipperAddress2,$shipperAddress3,$shipperPin,
                      "20","20","20",$quant,$custCode,$dateTime[0],$dateTime[1]);
                 } else if($theorder->payment_method==$_POST['rad']){
-                          $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,'Getglamr',$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
-  $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,"Getglamr","Room no-103, B-9, First Floor, Housing Society, South Extension Part-I New Delhi","-","-","110049",
+                          $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,$shipperName,$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
+  $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,$shipperName,$shipperAddress1,$shipperAddress2,$shipperAddress3,$shipperPin,
                      "20","20","20",$quant,$custCode,$dateTime[0],$dateTime[1]); 
                 }
                 
@@ -443,16 +466,24 @@ header("Expires: 0");
                 
                      
             }
+        //    include 'class/PHPExcel/IOFactory.php';
+
+//$myFile = $myFile;
+//echo get_include_path() . PATH_SEPARATOR . 'class/';
+//$objReader = PHPExcel_IOFactory::createReader('CSV');
+//$objPHPExcel = $objReader->load($finalarray);
+//$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+//echo $objWriter->save('MyExcelFile.xls');
    ob_clean();     
 header('Content-Type: application/vnd.ms-excel;');                 // This should work for IE & Opera
 header("Content-type: application/x-msexcel");     
-header("Content-Disposition: attachment; filename=shipment.xls");
+header("Content-Disposition: attachment; filename=MyExcelFile.xls");
 header("Pragma: no-cache");
 header("Expires: 0");
             
     $outputBuffer = fopen("php://output", 'w');
 	foreach($finalarray as $val) {
-	    fputcsv($outputBuffer, $val);
+	    fputcsv($outputBuffer, $val,"\t");
 	}
 	fclose($outputBuffer);        
       exit;  
