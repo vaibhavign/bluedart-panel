@@ -573,15 +573,44 @@ $shipperPin = get_option('return_pincode');
                 
                      
             }
-        //    include 'class/PHPExcel/IOFactory.php';
+    
+//echo '<pre>';
+//print_r($finalarray);
+      $outputBuffer = fopen("/tmp/somefile.csv", "w");      
+        //  $outputBuffer = fopen("php://output", 'w');
+	foreach($finalarray as $val) {
+	    fputcsv($outputBuffer, $val);
+	}
+	fclose($outputBuffer);    
+    // echo 'testa'; exit;   
+            include_once('class/PHPExcel/IOFactory.php');
 
 //$myFile = $myFile;
 //echo get_include_path() . PATH_SEPARATOR . 'class/';
-//$objReader = PHPExcel_IOFactory::createReader('CSV');
-//$objPHPExcel = $objReader->load($finalarray);
-//$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
-//echo $objWriter->save('MyExcelFile.xls');
-   ob_clean();     
+$objReader = PHPExcel_IOFactory::createReader('CSV'); 
+$objPHPExcel = $objReader->load('/tmp/somefile.csv'); 
+$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+$objWriter->save('/tmp/MyExcelFilesss.xls');
+
+header('Content-Description: File Transfer');
+header("Content-type: application/octet-stream");
+header('Content-Disposition: attachment; filename=softdata'.date('d-m-Y').'.xls');
+header('Content-Transfer-Encoding: binary');
+header('Expires: 0');
+header('Cache-Control: must-revalidate');
+header('Pragma: public');
+header('Content-Length: ' . filesize('/tmp/MyExcelFilesss.xls'));
+
+ob_clean();
+flush();
+readfile('/tmp/MyExcelFilesss.xls');
+
+unlink('/tmp/MyExcelFilesss.xls');
+ //   header("Content-type: application/octet-stream");
+ //   header("Content-Disposition: filename='/tmp/MyExcelFilesss.xls'");
+
+ /*
+            ob_clean();     
 header('Content-Type: application/vnd.ms-excel;');                 // This should work for IE & Opera
 header("Content-type: application/x-msexcel");     
 header("Content-Disposition: attachment; filename=MyExcelFile.xls");
@@ -593,10 +622,12 @@ header("Expires: 0");
 	    fputcsv($outputBuffer, $val);
 	}
 	fclose($outputBuffer);        
-      exit;  
+      exit; 
+  * 
+  */ 
  }
  
-        
+       
         /**
          * Create admin manifest page
          * @global type $woocommerce
