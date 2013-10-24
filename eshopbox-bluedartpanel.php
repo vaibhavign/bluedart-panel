@@ -3,7 +3,7 @@
 Plugin Name: Eshopbox bluedart panel
 Plugin URI: http://www.vaibhavign.com
 Description: Bluedart integration panel
-Version: 1.0
+Version: 2.0
 Author: Vaibhav Sharma
 Author Email: http://www.vaibhavign.com
 */
@@ -277,7 +277,7 @@ function bluedart_config_page(){
 				  <input type="hidden" name="bluedart_fields_submitted" value="submitted">
 				  <div id="poststuff">
 						<div class="postbox">
-							<h3 class="hndle"><?php _e( 'Upload AWB number .xls/.txt file', 'wc-bluedart' ); ?></h3>
+							<h3 class="hndle"><?php _e( 'Upload AWB number .xls/.xlsx/.txt file', 'wc-bluedart' ); ?></h3>
 							<div class="inside pip-preview">
 							  <table class="form-table">
 							    <tr>
@@ -296,6 +296,48 @@ function bluedart_config_page(){
     						 <p class="submit">
 		        <input type="submit" name="subbatch" value="submit" />
             <input type="hidden" name="postcsv" value="post" />
+			  </p>			
+    									         
+    								</td>
+    							</tr>		
+                                                                                 
+                        
+								</table>
+							</div>
+						</div>
+					</div>
+			 
+		    </form>
+		  </div>
+		</div>      
+
+ <div class="wrap">
+
+		
+			<div id="content">
+			  <form method="post" name="ordercsvform" id="ordercsvform" action="" enctype="multipart/form-data" >
+				  <input type="hidden" name="bluedart_ordercsvform_submitted" value="submitted">
+				  <div id="poststuff">
+						<div class="postbox">
+							<h3 class="hndle"><?php _e( 'Upload Order id .xls/.xlsx/.txt file', 'wc-bluedart' ); ?></h3>
+							<div class="inside pip-preview">
+							  <table class="form-table">
+							    <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_store_name"><b><?php _e( 'Upload file:', 'wc-bluedart' ); ?></b></label> 
+    								</th>
+    								<td>
+    									
+    									          <input type="file" name="ordercsvtext" />
+    								</td>
+    							</tr>
+    							
+    				<tr>
+    								
+    								<td>
+    						 <p class="submit">
+		        <input type="submit" name="subbatch" value="submit" />
+            <input type="hidden" name="orderpostcsv" value="post" />
 			  </p>			
     									         
     								</td>
@@ -340,9 +382,11 @@ function bluedart_config_page(){
 if ($handle) {
     while (($buffer = fgets($handle, 4096)) !== false) {
     $buffer = trim($buffer);
+    if($buffer!=''){
 $querystr = "SELECT post_id FROM $wpdb->postmeta WHERE meta_key='_tracking_number' and meta_value='$buffer'";
 $postid = $wpdb->get_var($querystr);
 $orderIds[] = $postid;
+    }
     }
     $this->readArrayExportxls($orderIds);
 }
@@ -392,6 +436,71 @@ $this->readArrayExportxls($orderIds);
          
      } }
      
+     
+     // for order id
+     
+         if($_POST['orderpostcsv']=='post'){
+        // echo '<pre>'; print_r($_FILES);
+        // print_r($_POST);
+	// for text files
+	if($_FILES['ordercsvtext']['type']=='text/plain'){ 
+		$myFile = $_FILES['ordercsvtext']['tmp_name'];
+		$handle = @fopen($myFile, "r");
+if ($handle) {
+    while (($buffer = fgets($handle, 4096)) !== false) {
+    $buffer = trim($buffer);
+    if($buffer!=''){
+
+$orderIds[] = $buffer;
+    }
+    }
+    $this->readArrayExportxls($orderIds);
+}
+
+
+	} else { // for excel file
+//	if($_FILES['csvtext']['type']=='application/vnd.ms-excel'){
+$myFile = $_FILES['ordercsvtext']['tmp_name'];
+//set_include_path(get_include_path() . PATH_SEPARATOR . 'class/');
+include 'class/PHPExcel/IOFactory.php';
+
+//$myFile = $myFile;
+//echo get_include_path() . PATH_SEPARATOR . 'class/';
+	try {
+
+	$objPHPExcel = PHPExcel_IOFactory::load($myFile);
+//echo 'test123';
+} catch(Exception $e) {
+
+	die('Error loading file "'.pathinfo($myFile,PATHINFO_BASENAME).'": '.$e->getMessage());
+
+}
+//echo 'test99';
+//echo '<pre>';
+//print_r($objPHPExcel);
+
+
+$sheetData = $objPHPExcel->getActiveSheet()->toArray(null,true,true,true);
+
+
+
+foreach($sheetData as $sheetdata){
+	$orderno = trim($sheetdata['A']);
+        $orderIds[] = $orderno;
+//print_r($sheetdata);
+}
+$this->readArrayExportxls($orderIds);
+//print_r($xyz);
+
+//	}
+	//echo '<pre>';
+	//print_r($_FILES);
+         
+     } }
+     
+     
+     
+     
       if($_POST['post1']=='post'){
         //  print_r($_POST);
           $manifestId = $_POST['batch'];
@@ -405,7 +514,8 @@ $this->readArrayExportxls($orderIds);
                 $orderIds[] = $val;
                 
             }
-            $this->readArrayExportxls($orderIds);
+            $mdates = $manifestDetails[0]->dates;
+            $this->readArrayExportxls($orderIds,$mdates);
             exit;
             
             foreach($individualOrder as $key=>$val){
@@ -484,7 +594,7 @@ header("Expires: 0");
  }
  
  
- function readArrayExportxls($orderIds){
+ function readArrayExportxls($orderIds,$manidetail=""){
       global $wpdb,$woocommerce;
                 $finalarray[]=array("Airwaybill","Type","Reference Number","Sender / Store name","attention","address1","address2","address3","pincode","tel number","mobile number","Prod/SKU code","contents"
                 ,"weight","Declared Value","Collectable Value","Vendor Code","Shipper Name","Return Address1","Return Address2","Return Address3","Return Pin","Length ( Cms )","Bredth ( Cms )","Height ( Cms )","Pieces","Area_customer_code","Handover Date","Handover Time"
@@ -557,7 +667,15 @@ $shipperPin = get_option('return_pincode');
                      $shipperAddress3 = get_option('return_address3');
                  }
                  
-     $dateTime = explode(' ',date('d-m-Y h:m:s',$manifestDetails[0]->dates));
+   //  $dateTime = explode(' ',date('d-m-Y h:m:s',$manifestDetails[0]->dates));
+                 
+                if($manidetail==""){
+                     $newDate =  date('d-m-Y h:m:s',$theorder->order_custom_fields['_date_shipped'][0]);
+                      $dateTime = explode(' ',$newDate);
+                 } else {
+                 $dateTime = explode(' ',date('d-m-Y h:m:s',$manidetail));
+                 }
+                 
                 if($_POST['rad']=='' || $_POST['rad']=='both'){
                  $finalarray[] = array($theorder->order_custom_fields['_tracking_number'][0],$payType,$theorder->id,$shipperName,$theorder->shipping_first_name.' '.$theorder->shipping_last_name,$theorder->shipping_address_1,$shipAddress2,'-',
   $theorder->shipping_postcode,'-',$theorder->billing_phone,substr($product_id,0,-1),substr($product_name,0,-1),$productWeight, $theorder->order_total,$totalCollectible,$vendorCode,$shipperName,$shipperAddress1,$shipperAddress2,$shipperAddress3,$shipperPin,
