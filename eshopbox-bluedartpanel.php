@@ -33,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class WC_Bludart{
     public function __construct(){
+        register_activation_hook( __FILE__, array( $this, 'createTables' ));
         add_action('admin_menu', array( &$this, 'woocommerce_bluedart_admin_menu' )); 
        
     }
@@ -41,6 +42,7 @@ function woocommerce_bluedart_admin_menu() {
     
     add_menu_page(__('BlueDart','wc-bluedart'), __('BlueDart','wc-bluedart'), 'edit_posts', 'eshopbox-bluedart', array( &$this, 'eshopbox_bluedart_page' ) );
     add_submenu_page( 'eshopbox-bluedart', 'Config', 'Config', 'edit_posts', 'bluedart_config', array( &$this, 'bluedart_config_page' ) );
+     add_submenu_page( 'eshopbox-bluedart', 'Upload AWB', 'Upload AWB', 'edit_posts', 'bluedart_uploadawb', array( &$this, 'bluedart_upload_awb' ) );
 }
  
 // config page for the bluedart panel
@@ -745,7 +747,183 @@ header("Expires: 0");
   */ 
  }
  
-       
+ function bluedart_upload_awb(){
+     global $wpdb;
+    ?>
+               <div class="wrap">
+
+		
+			<div id="content">
+			  <form method="post" name="uploadawb" id="csvform" action="" enctype="multipart/form-data" >
+				 
+				  <div id="poststuff">
+						<div class="postbox">
+							<h3 class="hndle"><?php _e( 'Upload AWB number .xls/.xlsxfile', 'wc-bluedart' ); ?></h3>
+							<div class="inside pip-preview">
+							  <table class="form-table">
+							    <tr>
+    								<th>
+    									<label for="eshopbox_bluedart_store_name"><b><?php _e( 'Upload file:', 'wc-bluedart' ); ?></b></label> 
+    								</th>
+    								<td>
+    									
+    									          <input type="file" name="awbnum" />
+                                                                                    <input type="radio" name="rad" value="cod" /> COD
+            <input type="radio" name="rad" value="prepaid" /> Prepaid
+    								</td>
+    							</tr>
+    							
+    				<tr>
+    								
+    								<td>
+    						 <p class="submit">
+		        <input type="submit" name="subbatchs" value="submit" />
+            <input type="hidden" name="postawbnum" value="post" />
+			  </p>			
+    									         
+    								</td>
+    							</tr>		
+                                                                                 
+                        
+								</table>
+							</div>
+						</div>
+					</div>
+			 
+		    </form>
+		  </div>
+		</div>  
+<?php
+
+if($_POST['postawbnum']=='post'){
+if(!isset($_POST['rad'])){
+    die('Select cod/prepaid type of AWB number');
+}
+    
+    $myFile = $_FILES['awbnum']['tmp_name'];
+//set_include_path(get_include_path() . PATH_SEPARATOR . 'class/');
+include 'class/PHPExcel/IOFactory.php';
+
+//$myFile = $myFile;
+//echo get_include_path() . PATH_SEPARATOR . 'class/';
+	try {
+
+	$objPHPExcel = PHPExcel_IOFactory::load($myFile);
+//echo 'test123';
+} catch(Exception $e) {
+
+	die('Error loading file "'.pathinfo($myFile,PATHINFO_BASENAME).'": '.$e->getMessage());
+
+}
+//echo 'test99';
+//echo '<pre>';
+//print_r($objPHPExcel);
+
+
+$sheetData = $objPHPExcel->getActiveSheet()->toArray(null,true,true,true);
+
+if($_POST['rad']=='cod'){
+    $awbTablename = $wpdb->prefix . "bluedart_codawb"; 
+} else {
+    $awbTablename = $wpdb->prefix . "bluedart_prepaidawb" ;
+}
+
+$ik=0;
+foreach($sheetData as $sheetdata){
+    if($ik>0){
+    $wpdb->insert(
+	$awbTablename,
+	array(
+		'CAWBNO' => trim($sheetdata['A']),
+		'WHO' => trim($sheetdata['B']),
+                'USAGEFLAG' => trim($sheetdata['C']),
+            'ISSUE_DATE' => trim($sheetdata['D']),
+            'CAWBNO1' => trim($sheetdata['E']),
+            'CORGAREA' => trim($sheetdata['F']),
+            'CCUSTCODE' => trim($sheetdata['G']),
+            'CCUSTNAME' => trim($sheetdata['H']),
+            'DPUDATE' => trim($sheetdata['I']),
+            'USEAGE' => trim($sheetdata['J']),
+            'CNT' => trim($sheetdata['K']),
+            'HISSUE_DT' => trim($sheetdata['L']),
+            'CCOMPGRP_A' => trim($sheetdata['M']),
+            'CCOMPGRP_R' => trim($sheetdata['N']),
+            'assigned' => '0',
+            'orderid' => ''
+	)
+    );
+    }
+    $ik++;
+    
+	//$orderno = trim($sheetdata['A']);
+      //  $ordernox = trim($sheetdata['B']);
+      //  $orderIds[] = $orderno;
+        
+        
+//print_r($sheetdata);
+}
+
+//echo '<pre>';
+//print_r($orderIds);
+//print_r($ordernox);
+
+}
+
+
+   
+ }
+ 
+    public function createTables(){
+        global $wpdb;
+        $table_name = $wpdb->prefix . "bluedart_codawb"; 
+        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+  `CAWBNO` varchar(250) NOT NULL,
+  `WHO` varchar(250) NOT NULL,
+  `USAGEFLAG` varchar(250) NOT NULL,
+  `ISSUE_DATE` varchar(250) NOT NULL,
+  `CAWBNO1` varchar(250) NOT NULL,
+  `CORGAREA` varchar(250) NOT NULL,
+  `CCUSTCODE` varchar(250) NOT NULL,
+  `CCUSTNAME` varchar(250) NOT NULL,
+  `DPUDATE` varchar(250) NOT NULL,
+  `USEAGE` varchar(250) NOT NULL,
+  `CNT` varchar(250) NOT NULL,
+  `HISSUE_DT` varchar(250) NOT NULL,
+  `CCOMPGRP_A` varchar(250) NOT NULL,
+  `CCOMPGRP_R` varchar(250) NOT NULL,
+  `assigned` enum('0','1') NOT NULL,
+  `orderid` varchar(250) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;";
+        require_once(ABSPATH . 'wp-admin/upgrade-functions.php');
+        dbDelta($sql);  
+            $table_name = $wpdb->prefix . "bluedart_prepaidawb"; 
+        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+  `CAWBNO` varchar(250) NOT NULL,
+  `WHO` varchar(250) NOT NULL,
+  `USAGEFLAG` varchar(250) NOT NULL,
+  `ISSUE_DATE` varchar(250) NOT NULL,
+  `CAWBNO1` varchar(250) NOT NULL,
+  `CORGAREA` varchar(250) NOT NULL,
+  `CCUSTCODE` varchar(250) NOT NULL,
+  `CCUSTNAME` varchar(250) NOT NULL,
+  `DPUDATE` varchar(250) NOT NULL,
+  `USEAGE` varchar(250) NOT NULL,
+  `CNT` varchar(250) NOT NULL,
+  `HISSUE_DT` varchar(250) NOT NULL,
+  `CCOMPGRP_A` varchar(250) NOT NULL,
+  `CCOMPGRP_R` varchar(250) NOT NULL,
+  `assigned` enum('0','1') NOT NULL,
+  `orderid` varchar(250) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;";
+        require_once(ABSPATH . 'wp-admin/upgrade-functions.php');
+        dbDelta($sql);      
+        
+        
+    }
         /**
          * Create admin manifest page
          * @global type $woocommerce
